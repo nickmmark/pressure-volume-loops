@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pressure-Volume Loop Prototype</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #controls {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <label>
+      <input type="checkbox" id="normalToggle" checked> Normal PV Loop
+    </label>
+    <label>
+      <input type="checkbox" id="labelToggle"> Valve Opening/Closing
+    </label>
+    <label>
+      <input type="checkbox" id="phaseToggle"> Cardiac Phases
+    </label>
+    <label>
+      <input type="checkbox" id="animateToggle"> Animate Loop
+    </label>
+  </div>
+  <canvas id="pvCanvas" width="600" height="400"></canvas>
+
+  <script>
+    // Define the six points for the "normal" loop with curve coefficients
+    const normalLoop = {
+      points: [
+        { x: 50, y: 5 }, // A = Mitral valve opens
+        { x: 60, y: 3 }, // B
+        { x: 120, y: 10 }, // C = Mitral valve closes
+        { x: 120, y: 80 }, // D = Aortic valve opens
+        { x: 70, y: 125 }, // E (control point for curve)
+        { x: 50, y: 120 }  // F = Aortic valve closes
+      ],
+      curveCoefficients: { a: -0.031, b: 4.78, c: -45 } // Coefficients for y = ax^2 + bx + c
+    };
+
+    // Labels for valve points with offsets
+    const valveLabels = [
+      { point: normalLoop.points[0], text: "Mitral valve opens", offset: { x: -16, y: 4 } },
+      { point: normalLoop.points[2], text: "Mitral valve closes", offset: { x: 16, y: 0 } },
+      { point: normalLoop.points[3], text: "Aortic valve opens", offset: { x: 16, y: 0 } },
+      { point: normalLoop.points[5], text: "Aortic valve closes", offset: { x: -16, y: -4 } }
+    ];
+
+    // Phase labels with offsets
+    const phaseLabels = [
+      { start: normalLoop.points[0], end: normalLoop.points[2], text: "Diastolic filling", offset: { x: 0, y: 10 } },
+      { start: normalLoop.points[2], end: normalLoop.points[3], text: "Isovolumetric contraction", offset: { x: 20, y: 0 } },
+      { start: normalLoop.points[3], end: normalLoop.points[5], text: "Ventricular ejection", offset: { x: 0, y: 15 } },
+      { start: normalLoop.points[5], end: normalLoop.points[0], text: "Isovolumetric relaxation", offset: { x: -20, y: 0 } }
+    ];
+
+    // Calculate intermediate points
+    function calculateMidpoint(point1, point2) {
+      return {
+        x: (point1.x + point2.x) / 2,
+        y: (point1.y + point2.y) / 2,
+      };
+    }
+
+    // Generate curve points for y = ax^2 + bx + c from D to F
+    function generateCurvePointsUsingFormula(startX, endX, coefficients, numPoints = 9) {
+      const { a, b, c } = coefficients;
+      const curvePoints = [];
+      for (let x = startX; x >= endX; x -= (startX - endX) / numPoints) {
+        const y = a * x ** 2 + b * x + c;
+        curvePoints.push({ x, y });
+      }
+      return curvePoints;
+    }
+
+    const curvePoints = generateCurvePointsUsingFormula(
+      normalLoop.points[3].x,
+      normalLoop.points[5].x,
+      normalLoop.curveCoefficients
+    );
+
+    const fullLoop = [
+      normalLoop.points[0],
+      calculateMidpoint(normalLoop.points[0], normalLoop.points[1]),
+      normalLoop.points[1],
+      calculateMidpoint(normalLoop.points[1], normalLoop.points[2]),
+      normalLoop.points[2],
+      normalLoop.points[3],
+      ...curvePoints,
+      normalLoop.points[0]
+    ];
+
+    const normalDataset = {
+      label: 'Normal Loop',
+      data: fullLoop,
+      borderColor: 'blue',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      showLine: true,
+    };
+
+    const ctx = document.getElementById('pvCanvas').getContext('2d');
+    const pvChart = new Chart(ctx, {
+      type: 'scatter',
+      data: {
+        datasets: [normalDataset],
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            title: {
+              display: true,
+              text: 'Volume (mL)',
+            },
+            min: 0,
+            max: 160
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Pressure (mmHg)',
+            },
+            min: 0,
+            max: 160
+          },
+        },
+        plugins: {
+          annotation: {
+            annotations: {}
+          }
+        }
+      }
+    });
+
+    let animationAnnotations = {};
+    let animationInterval;
+
+    function addValveLabels() {
+      const annotations = {};
+      valveLabels.forEach((label, index) => {
+        annotations[`valve${index}`] = {
+          type: 'label',
+          xValue: label.point.x + label.offset.x,
+          yValue: label.point.y + label.offset.y,
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          borderColor: 'black',
+          borderWidth: 1,
+          content: label.text,
+        };
+      });
+      return annotations;
+    }
+
+    function addPhaseLabels() {
+      const annotations = {};
+      phaseLabels.forEach((phase, index) => {
+        const midpoint = calculateMidpoint(phase.start, phase.end);
+        annotations[`phase${index}`] = {
+          type: 'label',
+          xValue: midpoint.x + phase.offset.x,
+          yValue: midpoint.y + phase.offset.y,
+          backgroundColor: 'rgba(200, 200, 255, 0.7)',
+          borderColor: 'black',
+          borderWidth: 1,
+          content: phase.text,
+        };
+      });
+      return annotations;
+    }
+
+    function animateLoop() {
+      let currentIndex = 0;
+      const totalPoints = fullLoop.length;
+
+      animationInterval = setInterval(() => {
+        // Highlight the current point
+        const currentPoint = fullLoop[currentIndex];
+        animationAnnotations[`point${currentIndex}`] = {
+          type: 'point',
+          xValue: currentPoint.x,
+          yValue: currentPoint.y,
+          backgroundColor: 'red',
+          radius: 6,
+        };
+
+        // Add corresponding label if it's a valve point
+        const valveLabel = valveLabels.find((label) => label.point.x === currentPoint.x && label.point.y === currentPoint.y);
+        if (valveLabel) {
+          animationAnnotations[`label${currentIndex}`] = {
+            type: 'label',
+            xValue: valveLabel.point.x + valveLabel.offset.x,
+            yValue: valveLabel.point.y + valveLabel.offset.y,
+            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+            borderColor: 'black',
+            borderWidth: 1,
+            content: valveLabel.text,
+          };
+        }
+
+        // Ensure the last label is added explicitly
+        if (currentIndex === totalPoints - 1) {
+          const lastPoint = normalLoop.points[5];
+          animationAnnotations[`finalLabel`] = {
+            type: 'label',
+            xValue: lastPoint.x + valveLabels[3].offset.x,
+            yValue: lastPoint.y + valveLabels[3].offset.y,
+            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+            borderColor: 'black',
+            borderWidth: 1,
+            content: "Aortic valve closes",
+          };
+        }
+
+        Object.assign(pvChart.options.plugins.annotation.annotations, animationAnnotations);
+        pvChart.update();
+
+        // Move to the next point
+        currentIndex = (currentIndex + 1) % totalPoints;
+      }, 500);
+    }
+
+    function stopAnimation() {
+      clearInterval(animationInterval);
+      animationInterval = null;
+      pvChart.update();
+    }
+
+    document.getElementById('labelToggle').addEventListener('change', (event) => {
+      if (event.target.checked) {
+        Object.assign(pvChart.options.plugins.annotation.annotations, addValveLabels());
+      } else {
+        Object.keys(pvChart.options.plugins.annotation.annotations).forEach((key) => {
+          if (key.startsWith('valve')) delete pvChart.options.plugins.annotation.annotations[key];
+        });
+      }
+      pvChart.update();
+    });
+
+    document.getElementById('phaseToggle').addEventListener('change', (event) => {
+      if (event.target.checked) {
+        Object.assign(pvChart.options.plugins.annotation.annotations, addPhaseLabels());
+      } else {
+        Object.keys(pvChart.options.plugins.annotation.annotations).forEach((key) => {
+          if (key.startsWith('phase')) delete pvChart.options.plugins.annotation.annotations[key];
+        });
+      }
+      pvChart.update();
+    });
+
+    document.getElementById('animateToggle').addEventListener('change', (event) => {
+      if (event.target.checked) {
+        animateLoop();
+      } else {
+        stopAnimation();
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
