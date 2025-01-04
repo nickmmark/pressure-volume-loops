@@ -1,10 +1,10 @@
 # pressure-volume-loops
 
-A simple educational app to help students visualize cardiovasular physiology with dynamic pressure volume curves & animations.
-
-![](https://github.com/nickmmark/pressure-volume-loops/blob/main/basic_PV_loop_demo1.gif)
+A simple open-source educational app to help students visualize cardiovasular physiology using dynamic pressure volume curves & animations.
 
 ## PV loops to demonstrate normal physiology
+
+![](https://github.com/nickmmark/pressure-volume-loops/blob/main/basic_PV_loop_demo1.gif)
 
 
 
@@ -25,4 +25,4 @@ A second order polynomial defines the appearance of the ejection curve. Three co
 
 
 
-### References
+## References
