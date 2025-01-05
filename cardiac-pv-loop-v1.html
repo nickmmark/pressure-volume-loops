@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -28,6 +28,12 @@
       <input type="checkbox" id="phaseToggle"> Cardiac Phases
     </label>
     <label>
+      <input type="checkbox" id="strokeVolumeToggle"> Stroke Volume
+    </label>
+    <label>
+      <input type="checkbox" id="bloodPressureToggle"> Blood Pressure
+    </label>
+    <label>
       <input type="checkbox" id="animateToggle"> Animate Loop
     </label>
   </div>
@@ -49,10 +55,10 @@
 
     // Labels for valve points with offsets
     const valveLabels = [
-      { point: normalLoop.points[0], text: "Mitral valve opens", offset: { x: -16, y: 4 } },
-      { point: normalLoop.points[2], text: "Mitral valve closes", offset: { x: 16, y: 0 } },
-      { point: normalLoop.points[3], text: "Aortic valve opens", offset: { x: 16, y: 0 } },
-      { point: normalLoop.points[5], text: "Aortic valve closes", offset: { x: -16, y: -4 } }
+      { point: normalLoop.points[0], text: "Mitral valve opens", offset: { x: -15, y: 10 } },
+      { point: normalLoop.points[2], text: "Mitral valve closes", offset: { x: 15, y: 10 } },
+      { point: normalLoop.points[3], text: "Aortic valve opens", offset: { x: 18, y: 0 } },
+      { point: normalLoop.points[5], text: "Aortic valve closes", offset: { x: -18, y: 0 } }
     ];
 
     // Phase labels with offsets
@@ -180,6 +186,100 @@
       return annotations;
     }
 
+    function addStrokeVolumeAnnotations() {
+      const annotations = {
+        esvLabel: {
+          type: 'label',
+          xValue: 50,
+          yValue: 150,
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          borderColor: 'red',
+          borderWidth: 1,
+          content: 'End Systolic Volume (ESV)',
+        },
+        edvLabel: {
+          type: 'label',
+          xValue: 120,
+          yValue: 150,
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          borderColor: 'red',
+          borderWidth: 1,
+          content: 'End Diastolic Volume (EDV)',
+        },
+        strokeVolumeLine: {
+          type: 'line',
+          xMin: 67,
+          xMax: 103,
+          yMin: 150,
+          yMax: 150,
+          borderColor: 'red',
+          borderWidth: 2,
+          label: {
+            display: true,
+            content: 'Stroke Volume',
+            position: 'top',
+            backgroundColor: 'red'
+          },
+        },
+        esvVerticalLine: {
+          type: 'line',
+          xMin: 50,
+          xMax: 50,
+          yMin: 0,
+          yMax: 145,
+          borderColor: 'gray',
+          borderWidth: 2,
+        },
+        edvVerticalLine: {
+          type: 'line',
+          xMin: 120,
+          xMax: 120,
+          yMin: 0,
+          yMax: 145,
+          borderColor: 'gray',
+          borderWidth: 2,
+        },
+      };
+      return annotations;
+    }
+
+    function addBloodPressureAnnotations() {
+    return {
+      systolicLabel: {
+        type: 'label',
+        xValue: 140,
+        yValue: 120,
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        borderColor: 'black',
+        borderWidth: 1,
+        content: 'Systolic Blood Pressure',
+      },
+      diastolicLabel: {
+        type: 'label',
+        xValue: 140,
+        yValue: 80,
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        borderColor: 'black',
+        borderWidth: 1,
+        content: 'Diastolic Blood Pressure',
+      },
+      pulsePressureLine: {
+        type: 'line',
+        xMin: 140,
+        xMax: 140,
+        yMin: 85,
+        yMax: 115,
+        borderColor: 'black',
+        borderWidth: 2,
+        label: {
+          display: true,
+          content: 'Pulse Pressure',
+          position: 'right',
+        },
+      },
+    };
+  }
+    
     function animateLoop() {
       let currentIndex = 0;
       const totalPoints = fullLoop.length;
@@ -259,6 +359,32 @@
       pvChart.update();
     });
 
+  document.getElementById('strokeVolumeToggle').addEventListener('change', (event) => {
+    if (event.target.checked) {
+      Object.assign(pvChart.options.plugins.annotation.annotations, addStrokeVolumeAnnotations());
+    } else {
+      Object.keys(pvChart.options.plugins.annotation.annotations).forEach((key) => {
+        if (key.startsWith('esv') || key.startsWith('edv') || key.startsWith('strokeVolume')) {
+          delete pvChart.options.plugins.annotation.annotations[key];
+        }
+      });
+    }
+    pvChart.update();
+  });
+
+  document.getElementById('bloodPressureToggle').addEventListener('change', (event) => {
+  if (event.target.checked) {
+    Object.assign(pvChart.options.plugins.annotation.annotations, addBloodPressureAnnotations());
+  } else {
+    Object.keys(pvChart.options.plugins.annotation.annotations).forEach((key) => {
+      if (key.startsWith('systolic') || key.startsWith('diastolic') || key.startsWith('pulsePressure')) {
+        delete pvChart.options.plugins.annotation.annotations[key];
+      }
+    });
+  }
+  pvChart.update();
+});
+    
     document.getElementById('animateToggle').addEventListener('change', (event) => {
       if (event.target.checked) {
         animateLoop();
@@ -269,6 +395,10 @@
   </script>
 </body>
 </html>
+
+
+
+
 
 
 
