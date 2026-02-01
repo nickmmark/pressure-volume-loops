@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cardiac Hemodynamics</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root { --bg: #050505; --panel: #121212; --red: #ff3b3b; --dim: #555; }
+        body { background: var(--bg); color: #eee; font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        #header { background: var(--panel); padding: 15px 30px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+        #main-view { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; }
+        #bottom-tray { background: var(--panel); border-top: 1px solid #222; padding: 15px 40px; display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 30px; }
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        .slider-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        label { font-size: 0.65rem; color: var(--dim); text-transform: uppercase; display: flex; justify-content: space-between; }
+        .m-val { font-size: 1.3rem; font-weight: bold; color: var(--red); font-family: monospace; }
+        .m-lbl { font-size: 0.6rem; color: var(--dim); text-transform: uppercase; }
+        .loop-active { fill: rgba(255, 59, 59, 0.12); stroke: var(--red); stroke-width: 3.5; }
+        .loop-ghost { fill: none; stroke: #444; stroke-width: 1.5; stroke-dasharray: 5,5; opacity: 0.6; pointer-events: none; }
+        .boundary { stroke-width: 1; stroke-dasharray: 4,4; opacity: 0.25; }
+        input[type="range"] { accent-color: var(--red); cursor: pointer; }
+        select { background: #222; color: white; border: 1px solid #333; padding: 6px; border-radius: 4px; font-size: 0.8rem; }
+        span.val { color: var(--red); font-weight: bold; }
+        .tooltip {
+            position: absolute; padding: 10px; background: rgba(0,0,0,0.95);
+            border: 1px solid var(--red); color: white; border-radius: 4px;
+            font-size: 0.75rem; pointer-events: none; visibility: hidden; z-index: 10;
+            font-family: monospace; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .hover-dot { fill: white; stroke: var(--red); stroke-width: 2.5; visibility: hidden; }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <div style="display: flex; gap: 20px; align-items: center;">
+        <h1 style="font-size: 0.85rem; margin: 0; letter-spacing: 1px;">HEMODYNAMIC SIMULATION ENGINE</h1>
+        <select id="pathology-select">
+            <option value="normal">Normal Physiology</option>
+            <option value="hf">Severe Systolic HF</option>
+        </select>
+        <select id="device-select">
+            <option value="none">No Support</option>
+            <option value="impella">Impella</option>
+            <option value="iabp">IABP</option>
+            <option value="ecmo">VA-ECMO</option>
+        </select>
+    </div>
+    <div style="display: flex; gap: 30px;">
+        <div style="text-align:center;"><div id="m-sv" class="m-val">0</div><div class="m-lbl">SV (mL)</div></div>
+        <div style="text-align:center;"><div id="m-co" class="m-val">0</div><div class="m-lbl">Total CO (L/min)</div></div>
+        <div style="text-align:center;"><div id="m-sw" class="m-val">0</div><div class="m-lbl">Stroke Work</div></div>
+        <div style="text-align:center;"><div id="m-amap" class="m-val">0</div><div class="m-lbl">Achieved MAP (mmHg)</div></div>
+    </div>
+</div>
+
+<div id="main-view">
+    <div id="tooltip" class="tooltip"></div>
+    <svg id="pv-svg" width="800" height="500"></svg>
+</div>
+
+<div id="bottom-tray">
+    <div class="control-group">
+        <label>Impella Level: <span id="p-val" class="val">P2</span></label>
+        <input type="range" id="input-p" min="1" max="9" step="1" value="2">
+
+        <label style="margin-top:10px;">VA-ECMO RPM: <span id="ecmo-val" class="val">0</span></label>
+        <input type="range" id="input-ecmo" min="0" max="6000" step="100" value="1000">
+        <p style="font-size: 0.6rem; color:#444;">ECMO Flow: <span id="ecmo-flow" class="val">0.0</span> L/min</p>
+
+        <p style="font-size: 0.6rem; color:#444;">Dashed loop = Unsupported State.</p>
+    </div>
+    <div class="control-group">
+        <label>Advanced Physiology</label>
+        <div class="slider-row">
+            <div>
+                <label>Ees: <span id="lbl-ees" class="val">1.8</span></label>
+                <input type="range" id="input-ees" min="0.4" max="4.5" step="0.1" value="1.8">
+            </div>
+            <div>
+                <label>EDV: <span id="lbl-edv" class="val">140</span></label>
+                <input type="range" id="input-edv" min="80" max="260" step="5" value="140">
+            </div>
+            <div>
+                <label>MAP: <span id="lbl-map" class="val">80</span></label>
+                <input type="range" id="input-map" min="30" max="160" step="5" value="80">
+            </div>
+            <div>
+                <label>V0: <span id="lbl-v0" class="val">10</span></label>
+                <input type="range" id="input-v0" min="0" max="40" step="1" value="10">
+            </div>
+        </div>
+    </div>
+    <div style="border-left: 1px solid #222; padding-left: 15px;">
+        <p style="font-size: 0.65rem; color:#666;">by @nickmmark</p>
+    </div>
+</div>
+
+<script>
+    const pathologies = {
+        normal: { ees: 1.8, edv: 140, map: 80, v0: 10 },
+        hf: { ees: 0.6, edv: 230, map: 70, v0: 15 }
+    };
+
+    let state = { ...pathologies.normal, device: 'none', pLevel: 2, ecmoRPM: 1000 };
+
+    const svgW = 800, svgH = 500, marg = { t: 40, r: 40, b: 50, l: 60 };
+    const innerW = svgW - marg.l - marg.r, innerH = svgH - marg.t - marg.b;
+
+    const svgRoot = d3.select("#pv-svg");
+    const svg = svgRoot.append("g").attr("transform", `translate(${marg.l},${marg.t})`);
+
+    const x = d3.scaleLinear().domain([0, 280]).range([0, innerW]);
+    const y = d3.scaleLinear().domain([0, 200]).range([innerH, 0]);
+
+    svg.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(x)).attr("class", "axis");
+    svg.append("g").call(d3.axisLeft(y)).attr("class", "axis");
+
+    svg.append("text")
+        .attr("x", innerW / 2)
+        .attr("y", innerH + 40)
+        .attr("text-anchor", "middle")
+        .style("fill", "#888")
+        .style("font-size", "12px")
+        .text("Volume (mL)");
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -innerH / 2)
+        .attr("y", -45)
+        .attr("text-anchor", "middle")
+        .style("fill", "#888")
+        .style("font-size", "12px")
+        .text("Pressure (mmHg)");
+
+    const espvrPath = svg.append("line").attr("class", "boundary").attr("stroke", "#4dff00");
+    const edpvrPath = svg.append("path").attr("class", "boundary").attr("stroke", "#ffea00").style("fill", "none");
+    const ghost = svg.append("path").attr("class", "loop-ghost");
+    const active = svg.append("path").attr("class", "loop-active");
+    const hoverDot = svg.append("circle").attr("class", "hover-dot").attr("r", 5);
+
+    function getPressure(v) { return 2 + 1.2 * Math.exp(0.016 * v); }
+
+    function closePoints(pts) {
+        if (!pts || pts.length < 2) return pts;
+        const first = pts[0];
+        const last = pts[pts.length - 1];
+        if (first.v === last.v && first.p === last.p) return pts;
+        return pts.concat([{...first}]);
+    }
+
+    function clamp(val, lo, hi) { return Math.max(lo, Math.min(hi, val)); }
+
+    function ecmoFlowLminFromRPM(rpm) {
+        // Linear mapping: 0-6000 RPM -> 0-4.5 L/min (0.75 L/min per 1000 RPM)
+        return clamp((rpm / 6000) * 4.5, 0, 4.5);
+    }
+
+    // Pressure-dependent effective aortic compliance to widen baseline PV loop.
+    // Higher compliance at lower aortic pressures (early systole) and converges to baseline as pressure rises.
+    function effectiveCompliance(C_ao, pao) {
+        const refP = 90;   // mmHg reference pressure
+        const gain = 0.5;  // max compliance boost (50% at very low pao)
+        if (pao < refP) {
+            return C_ao * (1 + gain * (1 - pao / refP));
+        }
+        return C_ao;
+    }
+
+    const caoCache = new Map();
+
+    function solveLoop(config, device, pLevel, ecmoRPM) {
+        // Core idea:
+        // - LV pressure = max(time-varying elastance pressure, EDPVR passive pressure)
+        // - Mitral inflow: qIn = kFill * max(Pla - Plv, 0)
+        // - Aortic outflow: qOut = kAv * max(Plv - Pao, 0)
+        // - Impella flow: qPump = qMax * f(Plv - Pao) (pressure-dependent)
+        // - VA-ECMO: adds arterial inflow to aorta (qECMO) and reduces effective filling as flow rises
+        // - Aortic pressure dynamics: dPao/dt from compliance + runoff to "map"
+        // - Run multiple cycles and return last cycle points (steady-state-ish)
+        // - Option B: auto-tune C_ao (behind the scenes) for baseline no-support state to target SV ~80 mL
+
+        const dt = 0.002;
+        const cycle = 0.85;
+        const ts = 0.30;
+
+        // Precompute ECMO flow (used in multiple places)
+        const ecmoFlow = (device === 'ecmo') ? ecmoFlowLminFromRPM(ecmoRPM) : 0;
+
+        // Device effect on systemic "map"
+        let map = config.map;
+        if (device === 'iabp') map -= 25;
+        if (device === 'ecmo') {
+            map += (10 + 15 * (ecmoFlow / 4.5)) / 2; // modest target MAP rise with ECMO flow
+        }
+        if (device === 'impella') map -= (pLevel * 0.8);
+
+        // Baseline preload: calibrated so EDV is achievable
+        let plaBase = getPressure(config.edv) + 1.5;
+
+        // Device-specific preload adjustments
+        if (device === 'impella') {
+            plaBase = plaBase - pLevel * 0.9;
+        }
+        // NOTE: VA-ECMO should not be modeled as "can fully drain LV preload" in this single-compartment model.
+        // Instead of subtracting plaBase with ECMO flow (which can collapse the loop), we reduce effective filling conductance.
+        plaBase = clamp(plaBase, 3, 60);
+
+        // Flow gains (tuned for plausible shapes, not units-true physiology)
+        const kFill = 22;     // mL/s per mmHg (mitral)
+        const kAv   = 18;     // mL/s per mmHg (aortic valve)
+
+        // Option 2 (clean): ECMO reduces effective filling conductance rather than directly subtracting preload.
+        // Use percent-based attenuation (exponential) so the effect asymptotes and never collapses the loop completely.
+        let kFillEff = kFill;
+        if (device === 'ecmo') {
+            const beta = 0.04; // per (L/min), tuned: higher -> more narrowing
+            kFillEff = kFill * Math.exp(-beta * ecmoFlow);
+            kFillEff = clamp(kFillEff, kFill * 0.45, kFill); // floor prevents numerical collapse
+        }
+
+        // Peripheral runoff
+        const R_runoff = 1.2; // mmHg/(mL/s) scaled
+
+        // Impella pump (LV -> Ao) pressure-dependent
+        let qMax = 0; // mL/s
+        if (device === 'impella') {
+            // Convert L/min -> mL/s
+            qMax = (1.5 + (pLevel * 0.65)) * 1000 / 60 * 1.6;
+        }
+
+        // VA-ECMO arterial inflow (adds to aortic compartment)
+        let qECMO = 0; // mL/s
+        if (device === 'ecmo') {
+            qECMO = ecmoFlow * 1000 / 60;
+        }
+
+        // Helper: pump flow fraction vs pressure gradient.
+        // If aortic pressure is much higher than LV, pump flow drops.
+        function pumpFrac(plv, pao) {
+            const dp = plv - pao;
+            const frac = 0.15 + 0.85 * (1 / (1 + Math.exp(-(dp + 30) / 12)));
+            return clamp(frac, 0, 1);
+        }
+
+        // Simulate multiple beats to reach a limit cycle
+        const warmBeats = 7;
+
+        function simulateWithCao(C_ao) {
+            let v = config.edv;
+            let pao = map;
+            let prevEjecting = false;
+            let prevFilling = false;
+            let lastPts = [];
+
+            for (let beat = 0; beat < warmBeats; beat++) {
+                const pts = [];
+                prevEjecting = false;
+                prevFilling = false;
+
+                for (let t = 0; t <= cycle; t += dt) {
+                    const Et = (t < ts)
+                        ? (config.ees - 0.1) * Math.pow(Math.sin(Math.PI * t / ts), 8) + 0.1
+                        : 0.1;
+
+                    let plv_el = Et * (v - config.v0);
+                    let plv = Math.max(plv_el, getPressure(v));
+
+                    const pla = plaBase;
+                    const qIn = (pla > plv) ? (pla - plv) * kFillEff : 0;
+
+                    const qOut = (plv > pao) ? (plv - pao) * kAv : 0;
+
+                    const qPump = qMax * pumpFrac(plv, pao);
+
+                    v += (qIn - qOut - qPump) * dt;
+
+                    const runoff = (pao - map) / R_runoff;
+
+                    // use effective (pressure-dependent) compliance
+                    const Ceff = effectiveCompliance(C_ao, pao);
+                    pao += ((qOut + qPump + qECMO) - runoff) / Ceff * dt;
+
+                    v = clamp(v, 5, 320);
+                    pao = clamp(pao, 20, 200);
+
+                    const ejecting = (qOut > 0.1);
+                    const filling = (qIn > 0.1);
+
+                    let label = "Ventricle Status";
+                    if (!prevFilling && filling) label = "Mitral Valve Opens (D)";
+                    if (prevFilling && !filling) label = "Mitral Valve Closes / End Diastole (A)";
+                    if (!prevEjecting && ejecting) label = "Aortic Valve Opens (B)";
+                    if (prevEjecting && !ejecting) label = "Aortic Valve Closes (C)";
+
+                    if (label === "Ventricle Status") {
+                        if (!ejecting && t < ts) label = "Isovolumetric Contraction (A-B)";
+                        else if (ejecting && t < ts) label = "Systolic Ejection (B-C)";
+                        else if (!filling && t >= ts && plv > 15) label = "Isovolumetric Relaxation (C-D)";
+                        else label = "Diastolic Filling (D-A)";
+                    }
+
+                    if (beat === warmBeats - 1) {
+                        pts.push({ v, p: plv, label, ao: pao });
+                    }
+
+                    prevEjecting = ejecting;
+                    prevFilling = filling;
+                }
+
+                if (beat === warmBeats - 1) lastPts = pts;
+            }
+
+            const maxV = d3.max(lastPts, d => d.v);
+            const minV = d3.min(lastPts, d => d.v);
+            const sv = (maxV != null && minV != null) ? (maxV - minV) : 0;
+
+            return { pts: lastPts, sv };
+        }
+
+        // Baseline aortic compliance (will be auto-tuned for no-support baseline)
+        let C_ao = 2.0;
+
+        // Option B: auto-tune C_ao for baseline no-support state to target SV ~80 mL
+        if (device === 'none') {
+            const targetSV = 80;
+            const key = [
+                "none",
+                config.ees.toFixed(3),
+                config.edv.toFixed(3),
+                config.map.toFixed(3),
+                config.v0.toFixed(3)
+            ].join("|");
+
+            if (caoCache.has(key)) {
+                C_ao = caoCache.get(key);
+            } else {
+                const candidates = [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.3, 2.6, 3.0, 3.4, 3.8, 4.2];
+                let bestC = candidates[0];
+                let bestErr = Infinity;
+
+                for (let i = 0; i < candidates.length; i++) {
+                    const res = simulateWithCao(candidates[i]);
+                    const err = Math.abs(res.sv - targetSV);
+                    if (err < bestErr) {
+                        bestErr = err;
+                        bestC = candidates[i];
+                    }
+                }
+                C_ao = bestC;
+                caoCache.set(key, C_ao);
+            }
+        }
+
+        // Final simulation with selected compliance
+        const finalRes = simulateWithCao(C_ao);
+        return finalRes.pts;
+    }
+
+    function update() {
+        const line = d3.line()
+            .x(d => x(d.v))
+            .y(d => y(d.p))
+            .curve(d3.curveCatmullRom.alpha(0.05));
+
+        // Compute ECMO flow for UI + readouts
+        const ecmoFlow = ecmoFlowLminFromRPM(state.ecmoRPM);
+        d3.select("#ecmo-val").text(state.ecmoRPM);
+        d3.select("#ecmo-flow").text(ecmoFlow.toFixed(1));
+
+        // 1. Ghost Loop (Baseline with NO device)
+        const ghostPts = solveLoop(state, 'none', 0, 0);
+        const ghostDrawPts = closePoints(ghostPts);
+        ghost.attr("d", line(ghostDrawPts))
+             .style("display", state.device === 'none' ? 'none' : 'block');
+
+        // 2. Active Loop
+        const pts = solveLoop(state, state.device, state.pLevel, state.ecmoRPM);
+        const drawPts = closePoints(pts);
+        active.transition().duration(250).attr("d", line(drawPts));
+
+        // 3. Boundaries
+        espvrPath
+            .attr("x1", x(state.v0)).attr("y1", y(0))
+            .attr("x2", x(190/state.ees+state.v0)).attr("y2", y(190));
+
+        const edpPts = d3.range(0, 280, 5).map(v => ({ v, p: getPressure(v) }));
+        edpvrPath.attr("d", d3.line().x(d => x(d.v)).y(d => y(d.p))(edpPts));
+
+        // 4. Readouts
+        const maxV = d3.max(pts, d => d.v), minV = d3.min(pts, d => d.v);
+        const sv = maxV - minV;
+        d3.select("#m-sv").text(Math.round(sv));
+
+        const nativeCO = (sv * 75) / 1000;
+
+        const impellaFlow = (state.device === 'impella' ? (1.5 + state.pLevel * 0.65) : 0);
+        const ecmoSupportFlow = (state.device === 'ecmo' ? ecmoFlow : 0);
+
+        d3.select("#m-co").text((nativeCO + impellaFlow + ecmoSupportFlow).toFixed(1));
+
+        // Stroke work: polygon area on explicitly closed points
+        const ptsClosed = closePoints(pts);
+        let area = 0;
+        for (let i = 0; i < ptsClosed.length - 1; i++) {
+            area += ptsClosed[i].v * ptsClosed[i+1].p - ptsClosed[i+1].v * ptsClosed[i].p;
+        }
+        d3.select("#m-sw").text(Math.abs(area / 2000).toFixed(1));
+
+        // Achieved MAP: mean of aortic pressure (pao) over the last cycle
+        const achievedMAP = d3.mean(pts, d => d.ao);
+        d3.select("#m-amap").text((achievedMAP != null ? achievedMAP : 0).toFixed(0));
+
+        d3.select("#lbl-ees").text(state.ees.toFixed(1));
+        d3.select("#lbl-edv").text(state.edv);
+        d3.select("#lbl-map").text(state.map);
+        d3.select("#lbl-v0").text(state.v0);
+        d3.select("#p-val").text("P" + state.pLevel);
+
+        // 5. Tooltips (account for margins)
+        svgRoot.on("mousemove", (event) => {
+            const [mx, my] = d3.pointer(event, svgRoot.node());
+            const gx = mx - marg.l;
+            const gy = my - marg.t;
+
+            if (gx < 0 || gx > innerW || gy < 0 || gy > innerH) {
+                hoverDot.style("visibility", "hidden");
+                d3.select("#tooltip").style("visibility", "hidden");
+                return;
+            }
+
+            const vx = x.invert(gx), vy = y.invert(gy);
+            let closest = pts[0], minDist = Infinity;
+
+            pts.forEach(p => {
+                const d = Math.hypot(p.v - vx, (p.p - vy) * 1.2);
+                if (d < minDist) { minDist = d; closest = p; }
+            });
+
+            if (minDist < 25) {
+                hoverDot
+                    .attr("cx", x(closest.v))
+                    .attr("cy", y(closest.p))
+                    .style("visibility", "visible");
+
+                d3.select("#tooltip")
+                    .style("visibility", "visible")
+                    .style("left", (event.pageX + 15) + "px")
+                    .style("top", (event.pageY - 25) + "px")
+                    .html(
+                        `<span style="color:#ff3b3b; font-weight:bold">${closest.label}</span><br>` +
+                        `P: ${Math.round(closest.p)} mmHg<br>` +
+                        `V: ${Math.round(closest.v)} mL`
+                    );
+            } else {
+                hoverDot.style("visibility", "hidden");
+                d3.select("#tooltip").style("visibility", "hidden");
+            }
+        });
+    }
+
+    d3.select("#pathology-select").on("change", function() {
+        state = { ...state, ...pathologies[this.value] };
+        syncSliders();
+        update();
+    });
+
+    d3.select("#device-select").on("change", function() {
+        state.device = this.value;
+        update();
+    });
+
+    d3.selectAll("input").on("input", function() {
+        const id = this.id.split('-').pop();
+        if (id === 'p') state.pLevel = +this.value;
+        else if (id === 'ees') state.ees = +this.value;
+        else if (id === 'edv') state.edv = +this.value;
+        else if (id === 'map') state.map = +this.value;
+        else if (id === 'v0') state.v0 = +this.value;
+        else if (id === 'ecmo') state.ecmoRPM = +this.value;
+        update();
+    });
+
+    function syncSliders() {
+        d3.select("#input-ees").property("value", state.ees);
+        d3.select("#input-edv").property("value", state.edv);
+        d3.select("#input-map").property("value", state.map);
+        d3.select("#input-v0").property("value", state.v0);
+        d3.select("#input-ecmo").property("value", state.ecmoRPM);
+    }
+
+    syncSliders();
+    update();
+</script>
+</body>
+</html>
