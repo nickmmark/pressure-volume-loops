@@ -19,6 +19,9 @@ The "squeeze" of the heart is modeled as a normalized activation function:
 ``` math
 E(t) = (E_{es} - E_{min}) \cdot \sin\left(\frac{\pi t}{T_s}\right)^n + E_{min}
 ```
+* $n = 8$: The shape factor. A higher $n$ creates the sharp peak required for point convergence.
+* $E_{es}$: End-Systolic Elastance (Inotropy).
+* $T_s$: Duration of systole (~0.3s).
 
 #### Instantaneous Pressure $P(t)$
 Ventricular pressure is the sum of the active contraction (governed by $E(t)$) and the passive stretching of the myocardium (EDPVR).
@@ -35,6 +38,7 @@ Q_{\text{out}} =
 0, & P(t) \le \text{MAP}
 \end{cases}
 ```
+At high support levels (P7-P9), the pump removes volume so rapidly that $P(t)$ exceeds $MAP$ for a negligible duration, forcing $V_B \approx V_C$.
 
 This is implemented as:
 ```javascript
@@ -66,4 +70,10 @@ function calculateConvergence(config, pLevel) {
 
 ## References
 Sagawa, K. (1981). [The ventricular pressure-volume diagram revisited.](https://www.ahajournals.org/doi/pdf/10.1161/01.cir.63.6.1223) Circulation Research.
+
+Sunagawa, K., et al. (1984). [Optimal coupling of the left ventricle with the arterial system.](https://pubmed.ncbi.nlm.nih.gov/8147838/) American Journal of Physiology.
+
+Burzotta, F., et al. (2019). Impella ventricular support and the pressure-volume relationship. JACC. (Direct visualization of the "teardrop" loop and point convergence).
+
+Uriel, N., et al. (2012). Hemodynamic transition during Impella support. Journal of Heart and Lung Transplantation. (Clinical observation of slanted isovolumetric phases).
 
