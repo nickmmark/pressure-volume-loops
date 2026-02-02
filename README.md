@@ -15,6 +15,21 @@ This line at the top of the plot represents the maximum pressure the ventricle c
 $$P_{es} = E_{es} \cdot (V_{es} - V_0)$$
 * $E_{es}$: The slope, known as end-systolic elastance. A steeper slope indicates higher contractility.
 * $V_0$: The theoretical volume at zero pressure.
+The app allows the user to adjust both $E_{es}$ and $V_0$
+
+#### EDPVR (End-Diastolic Pressure-Volume Relationship)
+This curve at the bottom of the plot describes the passive filling properties (stiffness/compliance) of the ventricle. Unlike the ESPVR, it is non-linear and is modeled exponentially:$$P_{ed} = A \cdot e^{\beta V_{ed}}$$
+* $\beta$: Represents the stiffness constant of the ventricular wall.
+
+#### Stroke Volume
+Stroke Volume (SV): $V_{ed} - V_{es}$ (The width of the loop).
+
+#### Ejection Fraction
+Ejection Fraction (EF): $\frac{SV}{V_{ed}} \times 100$.
+
+#### Stroke Work
+Stroke Work (SW): $\oint P \, dV$ (The area inside the loop).
+
 
 ## Calculations
 
