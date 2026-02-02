@@ -65,3 +65,5 @@ function calculateConvergence(config, pLevel) {
 ```
 
 ## References
+Sagawa, K. (1981). [The ventricular pressure-volume diagram revisited.](https://www.ahajournals.org/doi/pdf/10.1161/01.cir.63.6.1223) Circulation Research.
+
