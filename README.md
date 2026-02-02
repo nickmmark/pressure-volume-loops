@@ -15,5 +15,10 @@ The "squeeze" of the heart is modeled as a normalized activation function:
 E(t) = (E_{es} - E_{min}) \cdot \sin\left(\frac{\pi t}{T_s}\right)^n + E_{min}
 ```
 
+#### Instantaneous Pressure $P(t)$
+Ventricular pressure is the sum of the active contraction (governed by $E(t)$) and the passive stretching of the myocardium (EDPVR).
+``` math
+P(t) = \max \left( E(t) \cdot (V(t) - V_0), \ P_{off} + A \cdot e^{\beta \cdot V(t)} \right)
+```
 
 ## References
