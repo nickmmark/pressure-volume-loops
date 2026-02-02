@@ -5,6 +5,8 @@ A simple open-source web-based simulator visualizes left ventricular pressure–
 * [Percutaneous Microaxial flow pump](https://onepagericu.com/impella) (e.g. Impella)
 * [Veno-arterial ECMO](https://onepagericu.com/ecmo-fundamentals) (VA-ECMO)
 
+Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
+
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/hemodynamic_simulator_demo.gif)
 
 ### Calculations
