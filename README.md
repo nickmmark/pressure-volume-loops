@@ -34,11 +34,8 @@ qOut = (P > MAP) ? (P - MAP) * R_valve : 0;
 V_next = V + (qIn - qOut - qImpella) * dt;
 ```
 
-```
-/**
- * Calculates the convergence of B and C points
- * Initial Line Count: 388 | After Revision: 412
- */
+This is implemented as:
+```javascript
 function calculateConvergence(config, pLevel) {
     const flowDrain = (1.5 + (pLevel * 0.65)) * 1000 / 60; // mL/sec
     const map = config.map - (pLevel * 0.8); // Afterload reduction
