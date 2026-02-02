@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cardiac Hemodynamics</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
@@ -16,8 +17,8 @@
         .m-val { font-size: 1.3rem; font-weight: bold; color: var(--red); font-family: monospace; }
         .m-lbl { font-size: 0.6rem; color: var(--dim); text-transform: uppercase; }
         .loop-active { fill: rgba(255, 59, 59, 0.12); stroke: var(--red); stroke-width: 3.5; }
-        .loop-ghost { fill: none; stroke: #444; stroke-width: 1.5; stroke-dasharray: 5,5; opacity: 0.6; pointer-events: none; }
-        .boundary { stroke-width: 1; stroke-dasharray: 4,4; opacity: 0.25; }
+        .loop-ghost { fill: none; stroke: #666; stroke-width: 3; stroke-dasharray: 8,6; opacity: 0.8; pointer-events: none; }
+        .boundary { stroke-width: 2; stroke-dasharray: 6,6; opacity: 0.5; }
         input[type="range"] { accent-color: var(--red); cursor: pointer; }
         select { background: #222; color: white; border: 1px solid #333; padding: 6px; border-radius: 4px; font-size: 0.8rem; }
         span.val { color: var(--red); font-weight: bold; }
@@ -28,6 +29,29 @@
             font-family: monospace; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
         .hover-dot { fill: white; stroke: var(--red); stroke-width: 2.5; visibility: hidden; }
+
+        /* Responsive / mobile layout */
+        #pv-svg { width: 100%; height: 70vh; max-height: 520px; }
+        input[type="range"] { width: 100%; height: 32px; }
+        @media (max-width: 900px) {
+            body { overflow: auto; height: auto; }
+            #header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 12px 14px; }
+            #header > div { flex-wrap: wrap; gap: 12px !important; }
+            #main-view { padding: 8px 10px; }
+            #bottom-tray { grid-template-columns: 1fr; gap: 16px; padding: 12px 14px; }
+            .slider-row { grid-template-columns: 1fr; gap: 10px; }
+            select { font-size: 0.95rem; padding: 10px; }
+            label { font-size: 0.75rem; }
+            .m-val { font-size: 1.15rem; }
+            .m-lbl { font-size: 0.55rem; }
+        }
+
+
+        /* Disabled MCS controls (greyed out when device not selected) */
+        .controls-disabled { opacity: 0.35; filter: grayscale(1); }
+        .controls-disabled .val { color: #888 !important; }
+        .controls-disabled input[type="range"] { cursor: not-allowed; }
+
     </style>
 </head>
 <body>
@@ -61,12 +85,16 @@
 
 <div id="bottom-tray">
     <div class="control-group">
-        <label>Impella Level: <span id="p-val" class="val">P2</span></label>
-        <input type="range" id="input-p" min="1" max="9" step="1" value="2">
+        <div id="impella-controls">
+            <label>Impella Level: <span id="p-val" class="val">P2</span></label>
+            <input type="range" id="input-p" min="1" max="9" step="1" value="2">
+        </div>
 
-        <label style="margin-top:10px;">VA-ECMO RPM: <span id="ecmo-val" class="val">0</span></label>
-        <input type="range" id="input-ecmo" min="0" max="6000" step="100" value="1000">
-        <p style="font-size: 0.6rem; color:#444;">ECMO Flow: <span id="ecmo-flow" class="val">0.0</span> L/min</p>
+        <div id="ecmo-controls">
+            <label style="margin-top:10px;">VA-ECMO RPM: <span id="ecmo-val" class="val">0</span></label>
+            <input type="range" id="input-ecmo" min="0" max="6000" step="100" value="1000">
+            <p style="font-size: 0.6rem; color:#444;">ECMO Flow: <span id="ecmo-flow" class="val">0.0</span> L/min</p>
+        </div>
 
         <p style="font-size: 0.6rem; color:#444;">Dashed loop = Unsupported State.</p>
     </div>
@@ -92,7 +120,7 @@
         </div>
     </div>
     <div style="border-left: 1px solid #222; padding-left: 15px;">
-        <p style="font-size: 0.65rem; color:#666;">version 1.1.0 by @nickmmark</p>
+        <p style="font-size: 0.65rem; color:#666;">version 1.2.1 by @nickmmark</p>
     </div>
 </div>
 
@@ -139,6 +167,27 @@
     const active = svg.append("path").attr("class", "loop-active");
     const hoverDot = svg.append("circle").attr("class", "hover-dot").attr("r", 5);
 
+    function updateDeviceControlUI() {
+        const impellaSelected = (state.device === 'impella');
+        const ecmoSelected = (state.device === 'ecmo');
+
+        const impellaWrap = document.getElementById("impella-controls");
+        const ecmoWrap = document.getElementById("ecmo-controls");
+
+        const impellaSlider = document.getElementById("input-p");
+        const ecmoSlider = document.getElementById("input-ecmo");
+
+        if (impellaWrap && impellaSlider) {
+            impellaSlider.disabled = !impellaSelected;
+            impellaWrap.classList.toggle("controls-disabled", !impellaSelected);
+        }
+        if (ecmoWrap && ecmoSlider) {
+            ecmoSlider.disabled = !ecmoSelected;
+            ecmoWrap.classList.toggle("controls-disabled", !ecmoSelected);
+        }
+    }
+
+
     function getPressure(v) { return 2 + 1.2 * Math.exp(0.016 * v); }
 
     function closePoints(pts) {
@@ -170,80 +219,54 @@
     const caoCache = new Map();
 
     function solveLoop(config, device, pLevel, ecmoRPM) {
-        // Core idea:
-        // - LV pressure = max(time-varying elastance pressure, EDPVR passive pressure)
-        // - Mitral inflow: qIn = kFill * max(Pla - Plv, 0)
-        // - Aortic outflow: qOut = kAv * max(Plv - Pao, 0)
-        // - Impella flow: qPump = qMax * f(Plv - Pao) (pressure-dependent)
-        // - VA-ECMO: adds arterial inflow to aorta (qECMO) and reduces effective filling as flow rises
-        // - Aortic pressure dynamics: dPao/dt from compliance + runoff to "map"
-        // - Run multiple cycles and return last cycle points (steady-state-ish)
-        // - Option B: auto-tune C_ao (behind the scenes) for baseline no-support state to target SV ~80 mL
-
         const dt = 0.002;
         const cycle = 0.85;
         const ts = 0.30;
 
-        // Precompute ECMO flow (used in multiple places)
         const ecmoFlow = (device === 'ecmo') ? ecmoFlowLminFromRPM(ecmoRPM) : 0;
 
-        // Device effect on systemic "map"
         let map = config.map;
         if (device === 'iabp') map -= 25;
         if (device === 'ecmo') {
-            map += (10 + 15 * (ecmoFlow / 4.5)) / 2; // modest target MAP rise with ECMO flow
+            map += (10 + 15 * (ecmoFlow / 4.5)) / 2;
         }
         if (device === 'impella') map -= (pLevel * 0.8);
 
-        // Baseline preload: calibrated so EDV is achievable
         let plaBase = getPressure(config.edv) + 1.5;
 
-        // Device-specific preload adjustments
         if (device === 'impella') {
             plaBase = plaBase - pLevel * 0.9;
         }
-        // NOTE: VA-ECMO should not be modeled as "can fully drain LV preload" in this single-compartment model.
-        // Instead of subtracting plaBase with ECMO flow (which can collapse the loop), we reduce effective filling conductance.
         plaBase = clamp(plaBase, 3, 60);
 
-        // Flow gains (tuned for plausible shapes, not units-true physiology)
-        const kFill = 22;     // mL/s per mmHg (mitral)
-        const kAv   = 18;     // mL/s per mmHg (aortic valve)
+        const kFill = 22;
+        const kAv   = 18;
 
-        // Option 2 (clean): ECMO reduces effective filling conductance rather than directly subtracting preload.
-        // Use percent-based attenuation (exponential) so the effect asymptotes and never collapses the loop completely.
         let kFillEff = kFill;
         if (device === 'ecmo') {
-            const beta = 0.04; // per (L/min), tuned: higher -> more narrowing
+            const beta = 0.04;
             kFillEff = kFill * Math.exp(-beta * ecmoFlow);
-            kFillEff = clamp(kFillEff, kFill * 0.45, kFill); // floor prevents numerical collapse
+            kFillEff = clamp(kFillEff, kFill * 0.45, kFill);
         }
 
-        // Peripheral runoff
-        const R_runoff = 1.2; // mmHg/(mL/s) scaled
+        const R_runoff = 1.2;
 
-        // Impella pump (LV -> Ao) pressure-dependent
-        let qMax = 0; // mL/s
+        let qMax = 0;
         if (device === 'impella') {
-            // Convert L/min -> mL/s
             qMax = (1.5 + (pLevel * 0.65)) * 1000 / 60 * 1.6;
         }
 
-        // VA-ECMO arterial inflow (adds to aortic compartment)
-        let qECMO = 0; // mL/s
+        let qECMO = 0;
         if (device === 'ecmo') {
             qECMO = ecmoFlow * 1000 / 60;
         }
 
-        // Helper: pump flow fraction vs pressure gradient.
-        // If aortic pressure is much higher than LV, pump flow drops.
         function pumpFrac(plv, pao) {
             const dp = plv - pao;
             const frac = 0.15 + 0.85 * (1 / (1 + Math.exp(-(dp + 30) / 12)));
             return clamp(frac, 0, 1);
         }
 
-        // Simulate multiple beats to reach a limit cycle
         const warmBeats = 7;
 
         function simulateWithCao(C_ao) {
@@ -277,7 +300,6 @@
 
                     const runoff = (pao - map) / R_runoff;
 
-                    // use effective (pressure-dependent) compliance
                     const Ceff = effectiveCompliance(C_ao, pao);
                     pao += ((qOut + qPump + qECMO) - runoff) / Ceff * dt;
 
@@ -318,10 +340,8 @@
             return { pts: lastPts, sv };
         }
 
-        // Baseline aortic compliance (will be auto-tuned for no-support baseline)
         let C_ao = 2.0;
 
-        // Option B: auto-tune C_ao for baseline no-support state to target SV ~80 mL
         if (device === 'none') {
             const targetSV = 80;
             const key = [
@@ -352,7 +372,6 @@
             }
         }
 
-        // Final simulation with selected compliance
         const finalRes = simulateWithCao(C_ao);
         return finalRes.pts;
     }
@@ -363,23 +382,21 @@
             .y(d => y(d.p))
             .curve(d3.curveCatmullRom.alpha(0.05));
 
-        // Compute ECMO flow for UI + readouts
+        updateDeviceControlUI();
+
         const ecmoFlow = ecmoFlowLminFromRPM(state.ecmoRPM);
         d3.select("#ecmo-val").text(state.ecmoRPM);
         d3.select("#ecmo-flow").text(ecmoFlow.toFixed(1));
 
-        // 1. Ghost Loop (Baseline with NO device)
         const ghostPts = solveLoop(state, 'none', 0, 0);
         const ghostDrawPts = closePoints(ghostPts);
         ghost.attr("d", line(ghostDrawPts))
              .style("display", state.device === 'none' ? 'none' : 'block');
 
-        // 2. Active Loop
         const pts = solveLoop(state, state.device, state.pLevel, state.ecmoRPM);
         const drawPts = closePoints(pts);
         active.transition().duration(250).attr("d", line(drawPts));
 
-        // 3. Boundaries
         espvrPath
             .attr("x1", x(state.v0)).attr("y1", y(0))
             .attr("x2", x(190/state.ees+state.v0)).attr("y2", y(190));
@@ -387,7 +404,6 @@
         const edpPts = d3.range(0, 280, 5).map(v => ({ v, p: getPressure(v) }));
         edpvrPath.attr("d", d3.line().x(d => x(d.v)).y(d => y(d.p))(edpPts));
 
-        // 4. Readouts
         const maxV = d3.max(pts, d => d.v), minV = d3.min(pts, d => d.v);
         const sv = maxV - minV;
         d3.select("#m-sv").text(Math.round(sv));
@@ -399,7 +415,6 @@
 
         d3.select("#m-co").text((nativeCO + impellaFlow + ecmoSupportFlow).toFixed(1));
 
-        // Stroke work: polygon area on explicitly closed points
         const ptsClosed = closePoints(pts);
         let area = 0;
         for (let i = 0; i < ptsClosed.length - 1; i++) {
@@ -407,7 +422,6 @@
         }
         d3.select("#m-sw").text(Math.abs(area / 2000).toFixed(1));
 
-        // Achieved MAP: mean of aortic pressure (pao) over the last cycle
         const achievedMAP = d3.mean(pts, d => d.ao);
         d3.select("#m-amap").text((achievedMAP != null ? achievedMAP : 0).toFixed(0));
 
@@ -417,7 +431,6 @@
         d3.select("#lbl-v0").text(state.v0);
         d3.select("#p-val").text("P" + state.pLevel);
 
-        // 5. Tooltips (account for margins)
         svgRoot.on("mousemove", (event) => {
             const [mx, my] = d3.pointer(event, svgRoot.node());
             const gx = mx - marg.l;
@@ -467,6 +480,7 @@
 
     d3.select("#device-select").on("change", function() {
         state.device = this.value;
+        updateDeviceControlUI();
         update();
     });
 
@@ -486,10 +500,10 @@
         d3.select("#input-edv").property("value", state.edv);
         d3.select("#input-map").property("value", state.map);
         d3.select("#input-v0").property("value", state.v0);
-        d3.select("#input-ecmo").property("value", state.ecmoRPM);
     }
 
     syncSliders();
+    updateDeviceControlUI();
     update();
 </script>
 </body>
