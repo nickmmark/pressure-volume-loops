@@ -119,6 +119,7 @@ Current version: 1.2.1
 
 1.0.0 - first released version
 1.2.0 - mobile optimized (larger controls, thicker lines)
+1.2.1 - greyed out controls when MCS not selected
 
 ## License
 Available open-source under an MIT license.
