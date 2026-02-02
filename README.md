@@ -9,8 +9,14 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/hemodynamic_simulator_demo.gif)
 
-### Calculations
+## Calculations
 
+
+### IABP Calculations
+* Pressure Reduction: The model simulates the "inflation/deflation" cycle by reducing the effective $MAP$ during systole (systolic unloading).Formula Change:
+  $MAP_{effective} = MAP_{baseline} - \Delta P_{iabp}$.
+* Loop Geometry: The loop remains largely rectangular. However, Point B (Aortic Opening) occurs at a lower pressure, and Point C (Aortic Closure) occurs at a lower volume, slightly increasing the $SV$ and shifting the loop slightly to the left.
+* Isovolumetric Phases: Unlike the Impella, these remain vertical because the IABP does not remove blood from the ventricle; it only reduces the resistance against which the heart must pump.
 
 ### Impella Calculations
 Calculating the shape of the Impella augmented PV curves turns out to be quite tricky...
@@ -70,6 +76,18 @@ function calculateConvergence(config, pLevel) {
     };
 }
 ```
+
+### ECMO Calculations
+VA-ECMO is modeled as a retrograde flow system that increases the total afterload on the left ventricle.
+* Pressure Increase: The retrograde arterial flow significantly raises the $MAP$. Formula Change:
+    $MAP_{effective} = MAP_{baseline} + \Delta P_{ecmo}$.Loop Geometry:
+* The loop shifts to the right and becomes "taller".
+* Stalling Effect: In severe cases, the $MAP$ exceeds the heart's maximum pressure generation ($P_{max} = E_{es} \cdot (V - V_0)$). If this happens, the Aortic Valve never opens ($Q_{out} = 0$), and the loop collapses into a single vertical line on the right side of the graph—a clinical state known as "LV distention".The "EcMella" Interaction: When Impella is added to ECMO, the $Q_{impella}$ term is re-introduced to the $dV/dt$ equation, which "vents" the LV, slanting the vertical lines and pulling the loop back to the left.
+
+
+## License
+Available open-source under an MIT license.
+
 
 ## References
 Sagawa, K. (1981). [The ventricular pressure-volume diagram revisited.](https://www.ahajournals.org/doi/pdf/10.1161/01.cir.63.6.1223) Circulation Research.
