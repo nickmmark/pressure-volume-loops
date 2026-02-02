@@ -10,8 +10,11 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/hemodynamic_simulator_demo.gif)
 
 ## Description of PV Loops
-
-
+#### ESPVR (End-Systolic Pressure-Volume Relationship)
+This line at the top of the plot represents the maximum pressure the ventricle can develop at any given volume. It is a measure of contractility (Inotropy). It is often modeled linearly as:
+$$P_{es} = E_{es} \cdot (V_{es} - V_0)$$
+* $E_{es}$: The slope, known as end-systolic elastance. A steeper slope indicates higher contractility.
+* $V_0$: The theoretical volume at zero pressure.
 
 ## Calculations
 
