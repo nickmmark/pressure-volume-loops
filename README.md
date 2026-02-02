@@ -1,28 +1,19 @@
 # pressure-volume-loops
 
-A simple open-source educational app to help students visualize cardiovasular physiology using dynamic pressure volume curves & animations.
-
-## PV loops to demonstrate normal physiology
-
-![](https://github.com/nickmmark/pressure-volume-loops/blob/main/basic_PV_loop_demo1.gif)
-
+A simple open-source web-based simulator visualizes left ventricular pressure–volume (PV) loops under normal physiology, systolic heart failure, and several forms of mechanical circulatory support including:
+* [Intra-aortic balloon pump](https://onepagericu.com/iabp) (IABP)
+* [Percutaneous Microaxial flow pump](https://onepagericu.com/impella) (e.g. Impella)
+* [Veno-arterial ECMO](https://onepagericu.com/ecmo-fundamentals) (VA-ECMO)
 
 
-### Parameters to define a PV loop
-For simplicity, we can define a PV loop with just 6 points and one curve.
-* A  = Mitral Valve opens
-* B =
-* C = Mitral valve closes
-* D = Aortic valve opens
-* E = Peak ventricular ejection
-* F = Aortic valve closes
+### Calculations
+The application uses a dynamic simulation approach, treating the heart as a variable pressure-volume reservoir coupled with a continuous-flow pump. Unlike static geometric models, this version solves a system of differential equations over a discretized cardiac cycle, $T$, where $dt = 2\text{ms}$.
 
-A second order polynomial defines the appearance of the ejection curve. Three coefficients (a, b, c) define this curve.
-
-
-## PV loops to demonstrate cardiogenic shock and mechanical circulatory support (MCS)
-
-
+#### Ventricular Elastance $E(t)$ 
+The "squeeze" of the heart is modeled as a normalized activation function:
+```math
+Et = (Ees - Emin) * Math.pow(Math.sin(Math.PI * t / Ts), 8) + Emin
+```
 
 
 ## References
