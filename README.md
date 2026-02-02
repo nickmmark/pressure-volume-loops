@@ -29,7 +29,6 @@ P(t) = \max \left( E(t) \cdot (V(t) - V_0), \ P_{off} + A \cdot e^{\beta \cdot V
 #### Volume Continuity & Continuous Drain
 The change in volume $V$ is the sum of native ejection ($Q_{out}$), venous return ($Q_{in}$), and the continuous suction from the Impella pump ($Q_{impella}$).
 ``` math
-// Euler Integration
 qOut = (P > MAP) ? (P - MAP) * R_valve : 0;
 V_next = V + (qIn - qOut - qImpella) * dt;
 ```
