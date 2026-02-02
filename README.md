@@ -10,6 +10,14 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/hemodynamic_simulator_demo.gif)
 
 ## Description of PV Loops
+### Factors that effect the Pressure Volume Loop
+| Factor    | Effect on Loop                                                                                        |
+|-----------|-------------------------------------------------------------------------------------------------------|
+| Preload   | Increases the width of the loop ($V_{ed}$ moves right).                                               |
+| Afterload | The loop becomes taller and narrower; the top-left corner follows the ESPVR line.                     |
+| Inotropy  | Increases the slope of the ESPVR, allowing for a smaller $V_{es}$ and larger SV at the same pressure. |
+
+
 #### ESPVR (End-Systolic Pressure-Volume Relationship)
 This line at the top of the plot represents the maximum pressure the ventricle can develop at any given volume. It is a measure of contractility (Inotropy). It is often modeled linearly as:
 $$P_{es} = E_{es} \cdot (V_{es} - V_0)$$
