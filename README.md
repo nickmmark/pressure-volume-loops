@@ -11,7 +11,7 @@ The application uses a dynamic simulation approach, treating the heart as a vari
 
 #### Ventricular Elastance $E(t)$ 
 The "squeeze" of the heart is modeled as a normalized activation function:
-```math
+``` math
 Et = (Ees - Emin) * Math.pow(Math.sin(Math.PI * t / Ts), 8) + Emin
 ```
 
