@@ -13,7 +13,7 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 ### Factors that effect the Pressure Volume Loop
 | Factor    | Effect on Loop                                                                                        |
 |-----------|-------------------------------------------------------------------------------------------------------|
-| Preload   | Increases the width of the loop ($V_{ed}$ moves right).                                               |
+| Preload   | Increases the width of the loop ($V_{ed}$ moves right). Also alters the unstressed volume             |
 | Afterload | The loop becomes taller and narrower; the top-left corner follows the ESPVR line.                     |
 | Inotropy  | Increases the slope of the ESPVR, allowing for a smaller $V_{es}$ and larger SV at the same pressure. |
 
