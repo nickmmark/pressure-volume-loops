@@ -17,16 +17,19 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 | Afterload | The loop becomes taller and narrower; the top-left corner follows the ESPVR line.                     |
 | Inotropy  | Increases the slope of the ESPVR, allowing for a smaller $V_{es}$ and larger SV at the same pressure. |
 
-#### Adjusting Contractility $V_{es}$
+#### Adjusting Contractility ($E_{es}$)
+Left ventricular end-systolic elastance ($E_{es}$) is a load-independent index of cardiac contractility representing the slope of the end-systolic pressure-volume relationship (ESPVR).
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/increase_contractility.gif)
 
-#### Adjusting Preload 
-Preload consists of both __ and __
+#### Adjusting Preload (EDV and $V_0$)
+Preload consists of both End Diastolic Volume (EDV) and $V_0$, the hypothetical volume at zero pressure, both define the end-diastolic pressure-volume (EDPVR) relationship.
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_preload.gif)
 
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_unstressed_volume.gif)
 
-#### Adjusting Afterload
+#### Adjusting Afterload (MAP)
+![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_afterload.gif)
+
 
 #### ESPVR (End-Systolic Pressure-Volume Relationship)
 This line at the top of the plot represents the maximum pressure the ventricle can develop at any given volume. It is a measure of contractility (Inotropy). It is often modeled linearly as:
