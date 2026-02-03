@@ -21,6 +21,10 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/increase_contractility.gif)
 
 #### Adjusting Preload 
+Preload consists of both __ and __
+![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_preload.gif)
+
+![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_unstressed_volume.gif)
 
 #### Adjusting Afterload
 
