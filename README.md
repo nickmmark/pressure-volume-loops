@@ -17,6 +17,12 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 | Afterload | The loop becomes taller and narrower; the top-left corner follows the ESPVR line.                     |
 | Inotropy  | Increases the slope of the ESPVR, allowing for a smaller $V_{es}$ and larger SV at the same pressure. |
 
+#### Adjusting Contractility $V_{es}$
+![](https://github.com/nickmmark/pressure-volume-loops/blob/main/increase_contractility.gif)
+
+#### Adjusting Preload 
+
+#### Adjusting Afterload
 
 #### ESPVR (End-Systolic Pressure-Volume Relationship)
 This line at the top of the plot represents the maximum pressure the ventricle can develop at any given volume. It is a measure of contractility (Inotropy). It is often modeled linearly as:
