@@ -11,7 +11,7 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 
 ## Description of PV Loops
 ### Componets of the Pressure Volume Loop
-
+![](https://github.com/nickmmark/pressure-volume-loops/blob/main/basic_PV_loop_demo1.gif)
 
 ### Factors that effect the Pressure Volume Loop
 | Factor    | Effect on Loop                                                                                        |
