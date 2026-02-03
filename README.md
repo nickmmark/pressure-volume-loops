@@ -34,6 +34,7 @@ The app allows the user to adjust both $E_{es}$ and $V_0$
 This curve at the bottom of the plot describes the passive filling properties (stiffness/compliance) of the ventricle. Unlike the ESPVR, it is non-linear and is modeled exponentially:
 
 $$P_{ed} = A \cdot e^{\beta V_{ed}}$$
+* $V_{ed}$ is the volume of the ventricle at end diastole (LVEDV)
 * $\beta$: Represents the stiffness constant of the ventricular wall.
 
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_preload.gif)
