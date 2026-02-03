@@ -17,31 +17,36 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 | Afterload | The loop becomes taller and narrower; the top-left corner follows the ESPVR line.                     |
 | Inotropy  | Increases the slope of the ESPVR, allowing for a smaller $V_{es}$ and larger SV at the same pressure. |
 
-#### Adjusting Contractility ($E_{es}$)
-Left ventricular end-systolic elastance ($E_{es}$) is a load-independent index of cardiac contractility representing the slope of the end-systolic pressure-volume relationship (ESPVR), whihc is the curve above the PV loop.
-![](https://github.com/nickmmark/pressure-volume-loops/blob/main/increase_contractility.gif)
+#### Adjusting Contractility ($E_{es}$) --> The ESPVR (End-Systolic Pressure-Volume Relationship)
+This line at the top of the plot - the ESPVR - represents the maximum pressure the ventricle can develop at any given volume. Left ventricular end-systolic elastance ($E_{es}$) is a load-independent index of cardiac contractility representing the slope of the end-systolic pressure-volume relationship (ESPVR). 
 
-#### Adjusting Preload (EDV and $V_0$)
-Preload consists of both End Diastolic Volume (EDV) and $V_0$, the hypothetical volume at zero pressure, both define the end-diastolic pressure-volume (EDPVR) relationship, which is the curve below the PV loop.
-![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_preload.gif)
+It is often modeled linearly as:
+$$P_{es} = E_{es} \cdot (V_{es} - V_0)$$
+* $E_{es}$: The slope, known as end-systolic elastance. A steeper slope indicates higher contractility.
+* $V_0$: The theoretical volume at zero pressure, also known as the unstressed volume.
+The app allows the user to adjust both $E_{es}$ and $V_0$
+
+![](https://github.com/nickmmark/pressure-volume-loops/blob/main/increase_contractility.gif)
 
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_unstressed_volume.gif)
 
+#### Adjusting Preload 
+This curve at the bottom of the plot describes the passive filling properties (stiffness/compliance) of the ventricle. Unlike the ESPVR, it is non-linear and is modeled exponentially:
+
+$$P_{ed} = A \cdot e^{\beta V_{ed}}$$
+* $\beta$: Represents the stiffness constant of the ventricular wall.
+
+![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_preload.gif)
+
+
+
 #### Adjusting Afterload (MAP)
+The afterload - or mean arterial pressure - determines how efficiently the heart can pump blood forward.
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_afterload.gif)
 
 
-#### ESPVR (End-Systolic Pressure-Volume Relationship)
-This line at the top of the plot represents the maximum pressure the ventricle can develop at any given volume. It is a measure of contractility (Inotropy). It is often modeled linearly as:
-$$P_{es} = E_{es} \cdot (V_{es} - V_0)$$
-* $E_{es}$: The slope, known as end-systolic elastance. A steeper slope indicates higher contractility.
-* $V_0$: The theoretical volume at zero pressure.
-The app allows the user to adjust both $E_{es}$ and $V_0$
 
-#### EDPVR (End-Diastolic Pressure-Volume Relationship)
-This curve at the bottom of the plot describes the passive filling properties (stiffness/compliance) of the ventricle. Unlike the ESPVR, it is non-linear and is modeled exponentially:$$P_{ed} = A \cdot e^{\beta V_{ed}}$$
-* $\beta$: Represents the stiffness constant of the ventricular wall.
-
+## Calculations
 #### Stroke Volume
 Stroke Volume (SV): $V_{ed} - V_{es}$ (The width of the loop).
 
@@ -49,11 +54,7 @@ Stroke Volume (SV): $V_{ed} - V_{es}$ (The width of the loop).
 Ejection Fraction (EF): $\frac{SV}{V_{ed}} \times 100$.
 
 #### Stroke Work
-Stroke Work (SW): $\oint P \, dV$ (The area inside the loop).
-
-
-## Calculations
-
+Stroke Work (SW): $\oint P \, dV$ represents the area inside the loop.
 
 ### IABP Calculations
 * Pressure Reduction: The model simulates the "inflation/deflation" cycle by reducing the effective $MAP$ during systole (systolic unloading).Formula Change:
