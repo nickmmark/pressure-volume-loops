@@ -10,6 +10,9 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/hemodynamic_simulator_demo.gif)
 
 ## Description of PV Loops
+### Componets of the Pressure Volume Loop
+
+
 ### Factors that effect the Pressure Volume Loop
 | Factor    | Effect on Loop                                                                                        |
 |-----------|-------------------------------------------------------------------------------------------------------|
