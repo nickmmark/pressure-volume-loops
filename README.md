@@ -96,7 +96,10 @@ Stroke Volume (SV): $V_{ed} - V_{es}$ (The width of the loop).
 Ejection Fraction (EF): $\frac{SV}{V_{ed}} \times 100$.
 
 #### Stroke Work
-Stroke Work (SW): $\oint P \, dV$ represents the area inside the loop.
+Stroke Work (SW) represents the area inside the loop. 
+``` math
+SW = \oint P \, dV
+```
 
 ### IABP Calculations
 * Pressure Reduction: The model simulates the "inflation/deflation" cycle by reducing the effective $MAP$ during systole (systolic unloading).Formula Change:
