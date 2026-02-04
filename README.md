@@ -86,6 +86,16 @@ Venoarterial extracorporeal membrane oxygenation (VA-ECMO) provides variable hem
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/VA-ECMO.gif)
 
 ## Calculations/Modeling
+#### Hidden variables
+| Variable    | Definition                        | Default Value |
+|-------------|-----------------------------------|---------------|
+| dT          | Simulation timestep               | 0.02 sec      |
+| cycleLength | Length of cardiac cycle           | 0.85 sec      |
+| Cao         | Aortic compliance                 | 2             |
+| Rrunoff     | Windkessel-style runoffresistance | 1.2 mmHg/mL/s |
+| Dea         | Diastolic elastance               | 0.1           |
+| Kfill       | Mitral inflow conductance gain    | 22 mL/s/mmHg  |
+
 #### Rendering
 The points are generated using [Catmull-Rom Splines](https://en.wikipedia.org/wiki/Catmull%E2%80%93Rom_spline)
 
