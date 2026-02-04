@@ -14,12 +14,16 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/basic_PV_loop_demo1.gif)
 
 Points
-* A - 
-* B -
-* C -
-* D -
+* A - mitral valve opens
+* B - mitral valve closes
+* C - aortic valve opens
+* D - aortic valve closes
 
 Segments
+* DA - diastolic filling
+* AB - isovolumetric contraction
+* BC - systolic ejection
+* CD - isovolumetic relaxation
 
 ### Factors that effect the Pressure Volume Loop
 | Factor    | Effect on Loop                                                                                        |
