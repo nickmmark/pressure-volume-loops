@@ -186,26 +186,28 @@ Loop Geometry:
 * The loop shifts to the right and becomes "taller".
 * Stalling Effect: In severe cases, the $MAP$ exceeds the heart's maximum pressure generation ($P_{max} = E_{es} \cdot (V - V_0)$). If this happens, the Aortic Valve never opens ($Q_{out} = 0$), and the loop collapses into a single vertical line on the right side of the graph—a clinical state known as "LV distention".The "EcMella" Interaction: When Impella is added to ECMO, the $Q_{impella}$ term is re-introduced to the $dV/dt$ equation, which "vents" the LV, slanting the vertical lines and pulling the loop back to the left.
 
-## App Mechanics
 
-
-## Versions
+# Versions
 Current version: 1.2.1
 
 * 1.0.0 - first released version
 * 1.2.0 - mobile optimized (larger controls, thicker lines)
 * 1.2.1 - greyed out controls when MCS not selected
 
-## License
+
+## Features to add
+Features to work on:
+* diastolic dysfunction
+* valvular pathologies (wide open AI, severe AS, etc)
+
+
+# License
 Available open-source under an MIT license.
 
 
-## References
-Sagawa, K. (1981). [The ventricular pressure-volume diagram revisited.](https://www.ahajournals.org/doi/pdf/10.1161/01.cir.63.6.1223) Circulation Research.
-
-Sunagawa, K., et al. (1984). [Optimal coupling of the left ventricle with the arterial system.](https://pubmed.ncbi.nlm.nih.gov/8147838/) American Journal of Physiology.
-
-Burzotta, F., et al. (2019). Impella ventricular support and the pressure-volume relationship. JACC. (Direct visualization of the "teardrop" loop and point convergence).
-
-Uriel, N., et al. (2012). Hemodynamic transition during Impella support. Journal of Heart and Lung Transplantation. (Clinical observation of slanted isovolumetric phases).
+# References
+* Sagawa, K. (1981). [The ventricular pressure-volume diagram revisited.](https://www.ahajournals.org/doi/pdf/10.1161/01.cir.63.6.1223) Circulation Research.
+* Sunagawa, K., et al. (1984). [Optimal coupling of the left ventricle with the arterial system.](https://pubmed.ncbi.nlm.nih.gov/8147838/) American Journal of Physiology.
+* Burzotta, F., et al. (2019). Impella ventricular support and the pressure-volume relationship. JACC. (Direct visualization of the "teardrop" loop and point convergence).
+* Uriel, N., et al. (2012). Hemodynamic transition during Impella support. Journal of Heart and Lung Transplantation. (Clinical observation of slanted isovolumetric phases).
 
