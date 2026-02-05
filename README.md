@@ -9,8 +9,8 @@ Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/hemodynamic_simulator_demo.gif)
 
-## Description of PV Loops
-### Components of the Pressure Volume Loop
+# Description of PV Loops
+## Components of the Pressure Volume Loop
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/basic_PV_loop_demo1.gif)
 
 Points
@@ -25,14 +25,14 @@ Segments
 * BC - systolic ejection
 * CD - isovolumetic relaxation
 
-### Factors that effect the Pressure Volume Loop
+## Factors that effect the Pressure Volume Loop
 | Factor    | Effect on Loop                                                                                        |
 |-----------|-------------------------------------------------------------------------------------------------------|
 | Preload   | Increases the width of the loop ($V_{ed}$ moves right). Also alters the unstressed volume             |
 | Afterload | The loop becomes taller and narrower; the top-left corner follows the ESPVR line.                     |
 | Inotropy  | Increases the slope of the ESPVR, allowing for a smaller $V_{es}$ and larger SV at the same pressure. |
 
-#### Adjusting Contractility ($E_{es}$) --> The ESPVR (End-Systolic Pressure-Volume Relationship)
+### Adjusting Contractility ($E_{es}$) --> The ESPVR (End-Systolic Pressure-Volume Relationship)
 This line at the top of the plot - the ESPVR - represents the maximum pressure the ventricle can develop at any given volume. Left ventricular end-systolic elastance ($E_{es}$) is a load-independent index of cardiac contractility representing the slope of the end-systolic pressure-volume relationship (ESPVR). 
 
 It is often modeled linearly as:
@@ -45,7 +45,7 @@ The app allows the user to adjust both $E_{es}$ and $V_0$
 
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_unstressed_volume.gif)
 
-#### Adjusting Preload 
+### Adjusting Preload 
 This curve at the bottom of the plot describes the passive filling properties (stiffness/compliance) of the ventricle. Unlike the ESPVR, it is non-linear and is modeled exponentially:
 
 $$P_{ed} = A \cdot e^{\beta V_{ed}}$$
@@ -55,8 +55,7 @@ $$P_{ed} = A \cdot e^{\beta V_{ed}}$$
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_preload.gif)
 
 
-
-#### Adjusting Afterload (MAP)
+### Adjusting Afterload (MAP)
 The afterload - or mean arterial pressure - determines how efficiently the heart can pump blood forward.
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/adjust_afterload.gif)
 
@@ -86,7 +85,7 @@ Venoarterial extracorporeal membrane oxygenation (VA-ECMO) provides variable hem
 ![](https://github.com/nickmmark/pressure-volume-loops/blob/main/VA-ECMO.gif)
 
 ## Calculations/Modeling
-#### Hidden variables
+### Hidden variables
 | Variable    | Definition                        | Default Value |
 |-------------|-----------------------------------|---------------|
 | dT          | Simulation timestep               | 0.02 sec      |
@@ -96,9 +95,12 @@ Venoarterial extracorporeal membrane oxygenation (VA-ECMO) provides variable hem
 | Dea         | Diastolic elastance               | 0.1           |
 | Kfill       | Mitral inflow conductance gain    | 22 mL/s/mmHg  |
 
-#### Rendering
+###
+
+### Rendering
 The points are generated using [Catmull-Rom Splines](https://en.wikipedia.org/wiki/Catmull%E2%80%93Rom_spline)
 
+### Calculations
 #### Stroke Volume
 Stroke Volume (SV): $V_{ed} - V_{es}$ (The width of the loop).
 
