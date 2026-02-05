@@ -190,11 +190,13 @@ Loop Geometry:
 
 
 # Versions
-Current version: 1.2.1
+Current version: 1.3.1 (released 2026-02-05)
 
 * 1.0.0 - first released version
 * 1.2.0 - mobile optimized (larger controls, thicker lines)
 * 1.2.1 - greyed out controls when MCS not selected
+* 1.3.0 - added diastolic and some valvular pathologies
+* 1.3.1 - fixed issue with ESPVR line
 
 
 ## Features to add
