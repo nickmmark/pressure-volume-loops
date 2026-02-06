@@ -7,7 +7,7 @@ A simple open-source web-based simulator visualizes left ventricular pressure–
 
 Try it out [here](https://nickmmark.github.io/pressure-volume-loops/).
 
-![](https://github.com/nickmmark/pressure-volume-loops/blob/main/hemodynamic_simulator_demo.gif)
+![](https://github.com/nickmmark/pressure-volume-loops/blob/main/demo2.gif)
 
 # Description of PV Loops
 ## Components of the Pressure Volume Loop
