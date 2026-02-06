@@ -62,6 +62,10 @@
         <select id="pathology-select">
             <option value="normal">Normal Physiology</option>
             <option value="hf">Severe Systolic HF</option>
+            <option value="dd">Severe Diastolic HF</option>
+            <option value="as">Severe Aortic Stenosis</option>
+            <option value="ai">Aortic Insufficiency</option>
+            <option value="amr">Acute Mitral Regurgitation</option>
         </select>
         <select id="device-select">
             <option value="none">No Support</option>
@@ -120,17 +124,24 @@
         </div>
     </div>
     <div style="border-left: 1px solid #222; padding-left: 15px;">
-        <p style="font-size: 0.65rem; color:#666;">version 1.2.1 by @nickmmark</p>
+        <p style="font-size: 0.65rem; color:#666;">version 1.3.1 by @nickmmark</p>
     </div>
 </div>
 
 <script>
     const pathologies = {
-        normal: { ees: 1.8, edv: 140, map: 80, v0: 10 },
-        hf: { ees: 0.6, edv: 230, map: 70, v0: 15 }
+        normal: { ees: 1.8, edv: 140, map: 80, v0: 10, edpvrScale: 1.0, edpvrSlope: 1.0, avObstruction: 1.0, aiRegurg: 0.0, mrRegurg: 0.0 },
+        hf: { ees: 0.6, edv: 230, map: 70, v0: 15, edpvrScale: 1.1, edpvrSlope: 1.05, avObstruction: 1.0, aiRegurg: 0.0, mrRegurg: 0.0 },
+
+        // CHANGE #2 (AS wider): increased EDV modestly to widen (increase SV/loop width) while keeping high MAP.
+        as: { ees: 1.6, edv: 200, map: 105, v0: 10, edpvrScale: 1.0, edpvrSlope: 1.0, avObstruction: 0.35, aiRegurg: 0.0, mrRegurg: 0.0 },
+
+        ai: { ees: 2.0, edv: 210, map: 70, v0: 8, edpvrScale: 1.0, edpvrSlope: 1.0, avObstruction: 1.0, aiRegurg: 0.18, mrRegurg: 0.0 },
+        amr: { ees: 1.7, edv: 190, map: 65, v0: 12, edpvrScale: 1.0, edpvrSlope: 1.0, avObstruction: 1.0, aiRegurg: 0.0, mrRegurg: 0.28 },
+        dd: { ees: 2.2, edv: 115, map: 95, v0: 22, edpvrScale: 1.55, edpvrSlope: 1.20, avObstruction: 1.0, aiRegurg: 0.0, mrRegurg: 0.0 }
     };
 
-    let state = { ...pathologies.normal, device: 'none', pLevel: 2, ecmoRPM: 1000 };
+    let state = { ...pathologies.normal, pathologyKey: 'normal', device: 'none', pLevel: 2, ecmoRPM: 1000 };
 
     const svgW = 800, svgH = 500, marg = { t: 40, r: 40, b: 50, l: 60 };
     const innerW = svgW - marg.l - marg.r, innerH = svgH - marg.t - marg.b;
@@ -141,8 +152,9 @@
     const x = d3.scaleLinear().domain([0, 280]).range([0, innerW]);
     const y = d3.scaleLinear().domain([0, 200]).range([innerH, 0]);
 
-    svg.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(x)).attr("class", "axis");
-    svg.append("g").call(d3.axisLeft(y)).attr("class", "axis");
+    // CHANGE #1 (dynamic plot scaling): tag axes so we can safely re-call them after domain changes.
+    svg.append("g").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(x)).attr("class", "axis x-axis");
+    svg.append("g").call(d3.axisLeft(y)).attr("class", "axis y-axis");
 
     svg.append("text")
         .attr("x", innerW / 2)
@@ -190,6 +202,14 @@
 
     function getPressure(v) { return 2 + 1.2 * Math.exp(0.016 * v); }
 
+    function getPressureWithConfig(v, config) {
+        // Allows pathology-specific diastolic stiffness (EDPVR) adjustments.
+        // Default behavior matches getPressure(v) when edpvrScale=1 and edpvrSlope=1.
+        const scale = (config && config.edpvrScale != null) ? config.edpvrScale : 1.0;
+        const slope = (config && config.edpvrSlope != null) ? config.edpvrSlope : 1.0;
+        return (2 * scale) + (1.2 * scale) * Math.exp(0.016 * slope * v);
+    }
+
     function closePoints(pts) {
         if (!pts || pts.length < 2) return pts;
         const first = pts[0];
@@ -232,7 +252,7 @@
         }
         if (device === 'impella') map -= (pLevel * 0.8);
 
-        let plaBase = getPressure(config.edv) + 1.5;
+        let plaBase = getPressureWithConfig(config.edv, config) + 1.5;
 
         if (device === 'impella') {
             plaBase = plaBase - pLevel * 0.9;
@@ -241,6 +261,14 @@
 
         const kFill = 22;
         const kAv   = 18;
+
+        // Valvular pathology modifiers (kept in the pathology config object)
+        // - avObstruction < 1 narrows effective aortic valve conductance (Aortic Stenosis)
+        // - aiRegurg adds diastolic regurg from Ao -> LV (Aortic Insufficiency)
+        // - mrRegurg adds systolic regurg from LV -> LA (Acute MR)
+        const kAvEff = kAv * ((config && config.avObstruction != null) ? config.avObstruction : 1.0);
+        const kAI = kAv * ((config && config.aiRegurg != null) ? config.aiRegurg : 0.0);
+        const kMR = kFill * ((config && config.mrRegurg != null) ? config.mrRegurg : 0.0);
 
         let kFillEff = kFill;
         if (device === 'ecmo') {
@@ -287,21 +315,27 @@
                         : 0.1;
 
                     let plv_el = Et * (v - config.v0);
-                    let plv = Math.max(plv_el, getPressure(v));
+                    let plv = Math.max(plv_el, getPressureWithConfig(v, config));
 
                     const pla = plaBase;
                     const qIn = (pla > plv) ? (pla - plv) * kFillEff : 0;
 
-                    const qOut = (plv > pao) ? (plv - pao) * kAv : 0;
+                    const qOut = (plv > pao) ? (plv - pao) * kAvEff : 0;
 
                     const qPump = qMax * pumpFrac(plv, pao);
 
-                    v += (qIn - qOut - qPump) * dt;
+                    // Valvular regurgitant flows (simple conductance-based approximations)
+                    // Aortic Insufficiency: diastolic backflow Ao -> LV (adds volume to LV)
+                    const qAI = (kAI > 0 && t >= ts && pao > plv) ? (pao - plv) * kAI : 0;
+                    // Acute Mitral Regurgitation: systolic backflow LV -> LA (reduces LV volume without raising Ao)
+                    const qMR = (kMR > 0 && t < ts && plv > pla) ? (plv - pla) * kMR : 0;
+
+                    v += (qIn - qOut - qPump + qAI - qMR) * dt;
 
                     const runoff = (pao - map) / R_runoff;
 
                     const Ceff = effectiveCompliance(C_ao, pao);
-                    pao += ((qOut + qPump + qECMO) - runoff) / Ceff * dt;
+                    pao += ((qOut + qPump + qECMO - qAI) - runoff) / Ceff * dt;
 
                     v = clamp(v, 5, 320);
                     pao = clamp(pao, 20, 200);
@@ -377,33 +411,71 @@
     }
 
     function update() {
-        const line = d3.line()
-            .x(d => x(d.v))
-            .y(d => y(d.p))
-            .curve(d3.curveCatmullRom.alpha(0.05));
-
         updateDeviceControlUI();
 
         const ecmoFlow = ecmoFlowLminFromRPM(state.ecmoRPM);
         d3.select("#ecmo-val").text(state.ecmoRPM);
         d3.select("#ecmo-flow").text(ecmoFlow.toFixed(1));
 
+        // Compute loops first (so we can auto-fit axes if needed)
         const ghostPts = solveLoop(state, 'none', 0, 0);
+        const pts = solveLoop(state, state.device, state.pLevel, state.ecmoRPM);
+
+        // CHANGE #1 (dynamic plot scaling): expand domains if the loop exceeds the current plot range.
+        // Keeps baseline minimums so "normal" still looks consistent, but AS (high pressure) won't clip.
+        const maxVAll = Math.max(
+            280,
+            (d3.max(pts, d => d.v) != null ? d3.max(pts, d => d.v) : 280),
+            (d3.max(ghostPts, d => d.v) != null ? d3.max(ghostPts, d => d.v) : 280)
+        );
+        const maxPAll = Math.max(
+            200,
+            (d3.max(pts, d => d.p) != null ? d3.max(pts, d => d.p) : 200),
+            (d3.max(ghostPts, d => d.p) != null ? d3.max(ghostPts, d => d.p) : 200),
+            190
+        );
+
+        const xMax = Math.min(360, maxVAll * 1.06);
+        const yMax = Math.min(420, maxPAll * 1.12);
+
+        x.domain([0, Math.max(280, xMax)]);
+        y.domain([0, Math.max(200, yMax)]);
+
+        // Re-render axes with updated domains
+        svg.select(".x-axis").call(d3.axisBottom(x));
+        svg.select(".y-axis").call(d3.axisLeft(y));
+
+        const line = d3.line()
+            .x(d => x(d.v))
+            .y(d => y(d.p))
+            .curve(d3.curveCatmullRom.alpha(0.05));
+
+        // 1. Ghost Loop (Baseline with NO device)
         const ghostDrawPts = closePoints(ghostPts);
         ghost.attr("d", line(ghostDrawPts))
              .style("display", state.device === 'none' ? 'none' : 'block');
 
-        const pts = solveLoop(state, state.device, state.pLevel, state.ecmoRPM);
+        // 2. Active Loop
         const drawPts = closePoints(pts);
         active.transition().duration(250).attr("d", line(drawPts));
 
+        // 3. Boundaries (must be redrawn after rescale)
+
+        // Original ESPVR drawing (kept for reference)
+        // espvrPath
+        //     .attr("x1", x(state.v0)).attr("y1", y(0))
+        //     .attr("x2", x(190/state.ees+state.v0)).attr("y2", y(190));
+
+        // UPDATED: extend ESPVR beyond the visible plot so it never appears truncated.
+        const espvrPmax = y.domain()[1] * 1.35; // intentionally beyond domain -> drawn off-screen
         espvrPath
             .attr("x1", x(state.v0)).attr("y1", y(0))
-            .attr("x2", x(190/state.ees+state.v0)).attr("y2", y(190));
+            .attr("x2", x((espvrPmax / state.ees) + state.v0)).attr("y2", y(espvrPmax));
 
-        const edpPts = d3.range(0, 280, 5).map(v => ({ v, p: getPressure(v) }));
+        const edpPts = d3.range(0, x.domain()[1], 5).map(v => ({ v, p: getPressureWithConfig(v, state) }));
         edpvrPath.attr("d", d3.line().x(d => x(d.v)).y(d => y(d.p))(edpPts));
 
+        // 4. Readouts
         const maxV = d3.max(pts, d => d.v), minV = d3.min(pts, d => d.v);
         const sv = maxV - minV;
         d3.select("#m-sv").text(Math.round(sv));
@@ -473,7 +545,7 @@
     }
 
     d3.select("#pathology-select").on("change", function() {
-        state = { ...state, ...pathologies[this.value] };
+        state = { ...state, ...pathologies[this.value], pathologyKey: this.value };
         syncSliders();
         update();
     });
